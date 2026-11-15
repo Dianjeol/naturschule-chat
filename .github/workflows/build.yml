@@ -1,4 +1,4 @@
-name: Build Campai Chat Desktop App
+name: Build Naturschule Chat Desktop App
 
 on:
   push:
@@ -21,15 +21,15 @@ jobs:
           - platform: windows
             os: windows-latest
             rust_target: ""
-            artifact_name: campai-chat-windows
+            artifact_name: naturschule-chat-windows
           - platform: macos
             os: macos-latest
             rust_target: "aarch64-apple-darwin,x86_64-apple-darwin"
-            artifact_name: campai-chat-macos
+            artifact_name: naturschule-chat-macos
           - platform: linux
             os: ubuntu-latest
             rust_target: ""
-            artifact_name: campai-chat-linux
+            artifact_name: naturschule-chat-linux
 
     runs-on: ${{ matrix.os }}
 
@@ -71,13 +71,13 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      - name: Build Windows installer (.msi & .exe)
+      - name: Build Windows installer (.msi)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
           npm run build:windows
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
-          Get-ChildItem -File | Where-Object { $_.Extension -in ".msi", ".exe" } | Copy-Item -Destination release-assets/
+          Get-ChildItem -File -Filter *.msi | Copy-Item -Destination release-assets/
 
       - name: Build macOS installer (.dmg)
         if: matrix.platform == 'macos'
@@ -86,15 +86,14 @@ jobs:
           mkdir -p release-assets
           cp -f *.dmg release-assets/
 
-      - name: Build Linux packages (.deb & .AppImage)
+      - name: Build Linux AppImage (.AppImage)
         if: matrix.platform == 'linux'
         env:
           NO_STRIP: "1"
         run: |
           npm run build:linux
           mkdir -p release-assets
-          cp -f *.deb *.AppImage release-assets/
-          cp -f scripts/campai-chat-linux.sh release-assets/
+          cp -f *.AppImage release-assets/
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -118,13 +117,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
-          name: "Campai Chat (${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('Build #{0}', github.run_number) }})"
+          name: "Naturschule Chat (${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('Build #{0}', github.run_number) }})"
           body: |
-            Automatisch erstellte Desktop-Installationsdateien für **Campai Chat** (`https://app.campai.com/pt/9zbpc/rooms`).
+            Inoffizieller Web-Wrapper der **Freien Naturschule MSE** für den Eltern- & Schulchat (eine Datei pro Betriebssystem):
 
-            ### Enthalten:
-            - **Windows**: `.msi` Installer (lädt WebView2 bei Bedarf automatisch nach) & `.exe`
-            - **macOS**: `.dmg` (Universal Binary: Apple Silicon + Intel)
-            - **Linux**: `.deb` (Ubuntu/Debian) & `.AppImage` (inkl. `campai-chat-linux.sh` Hilfsskript für Wayland/NVIDIA)
+            - **Windows:** `Naturschule.Chat.msi` (lädt WebView2 bei Bedarf automatisch nach)
+            - **macOS:** `Naturschule.Chat.dmg` (Universal Binary: Apple Silicon + Intel)
+            - **Linux:** `naturschule-chat.AppImage` (direkt ausführbar, keine Installation nötig)
           files: artifacts/*
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}

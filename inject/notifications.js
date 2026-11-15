@@ -1,5 +1,5 @@
 // Ensure desktop notification permission is requested on first user interaction
-// when not yet decided, so Campai Chat alerts work out of the box.
+// when not yet decided, so Naturschule Chat alerts work out of the box.
 (function () {
   try {
     if (typeof window === 'undefined' || !('Notification' in window)) {
