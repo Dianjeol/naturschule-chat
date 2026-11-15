@@ -107,6 +107,19 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read app version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            APP_VERSION=$(node -p "require('./pake.json').appVersion")
+            echo "tag=v${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -116,13 +129,15 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
-          name: "Naturschule Chat (${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('Build #{0}', github.run_number) }})"
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Naturschule Chat ${{ steps.version.outputs.tag }}"
           body: |
-            Inoffizieller Web-Wrapper der **Freien Naturschule MSE** für den Eltern- & Schulchat (eine Datei pro Betriebssystem):
+            Desktop-Starter der **Freien Naturschule MSE** (eine Datei pro Betriebssystem):
 
-            - **Windows:** `Naturschule.Chat.msi` (lädt WebView2 bei Bedarf automatisch nach)
-            - **macOS:** `Naturschule.Chat.dmg` (Universal Binary: Apple Silicon + Intel)
-            - **Linux:** `naturschule-chat.AppImage` (direkt ausführbar, keine Installation nötig)
+            - **Windows:** `Naturschule.Chat.msi` *(lädt WebView2 bei Bedarf automatisch nach)*
+            - **macOS:** `Naturschule.Chat.dmg` *(Universal: Apple Silicon & Intel)*
+            - **Linux:** `naturschule-chat.AppImage` *(direkt ausführbar)*
+
+            Für Eltern gibt es eine kurze Schritt-für-Schritt-Hilfe im Repository unter [`docs/eltern-anleitung.pdf`](../../blob/main/docs/eltern-anleitung.pdf).
           files: artifacts/*
-          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          prerelease: false
