@@ -132,12 +132,12 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "Naturschule Chat ${{ steps.version.outputs.tag }}"
           body: |
-            Desktop-Starter der **Freien Naturschule MSE** (eine Datei pro Betriebssystem):
+            Desktop-App für den Schulchat der **Naturschule** (eine Datei pro System):
 
-            - **Windows:** `Naturschule.Chat.msi` *(lädt WebView2 bei Bedarf automatisch nach)*
-            - **macOS:** `Naturschule.Chat.dmg` *(Universal: Apple Silicon & Intel)*
-            - **Linux:** `naturschule-chat.AppImage` *(direkt ausführbar)*
+            - **Windows:** `Naturschule.Chat.msi`
+            - **macOS:** `Naturschule.Chat.dmg`
+            - **Linux:** `naturschule-chat.AppImage`
 
-            Für Eltern gibt es eine kurze Schritt-für-Schritt-Hilfe im Repository unter [`docs/eltern-anleitung.pdf`](../../blob/main/docs/eltern-anleitung.pdf).
+            Kurze Installationshilfe: [`docs/eltern-anleitung.pdf`](../../blob/main/docs/eltern-anleitung.pdf)
           files: artifacts/*
           prerelease: false
