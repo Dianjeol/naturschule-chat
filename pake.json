@@ -1,0 +1,23 @@
+{
+  "url": "https://app.campai.com/pt/9zbpc/rooms",
+  "name": "Campai Chat",
+  "title": "Campai Chat",
+  "identifier": "de.naturschule-mse.campai",
+  "appVersion": "1.0.0",
+  "width": 1200,
+  "height": 800,
+  "minWidth": 800,
+  "minHeight": 600,
+  "showSystemTray": true,
+  "systemTrayIcon": "icons/icon.png",
+  "hideOnClose": true,
+  "multiInstance": false,
+  "newWindow": true,
+  "restoreLastUrl": false,
+  "safeDomain": "campai.com,accounts.google.com,appleid.apple.com,login.microsoftonline.com",
+  "enableFind": true,
+  "installerLanguage": "de-DE",
+  "inject": [
+    "inject/notifications.js"
+  ]
+}

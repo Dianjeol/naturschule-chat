@@ -1,0 +1,130 @@
+name: Build Campai Chat Desktop App
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+            rust_target: ""
+            artifact_name: campai-chat-windows
+          - platform: macos
+            os: macos-latest
+            rust_target: "aarch64-apple-darwin,x86_64-apple-darwin"
+            artifact_name: campai-chat-macos
+          - platform: linux
+            os: ubuntu-latest
+            rust_target: ""
+            artifact_name: campai-chat-linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libfuse2
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build Windows installer (.msi & .exe)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          npm run build:windows
+          New-Item -ItemType Directory -Force -Path release-assets | Out-Null
+          Get-ChildItem -File | Where-Object { $_.Extension -in ".msi", ".exe" } | Copy-Item -Destination release-assets/
+
+      - name: Build macOS installer (.dmg)
+        if: matrix.platform == 'macos'
+        run: |
+          npm run build:macos
+          mkdir -p release-assets
+          cp -f *.dmg release-assets/
+
+      - name: Build Linux packages (.deb & .AppImage)
+        if: matrix.platform == 'linux'
+        env:
+          NO_STRIP: "1"
+        run: |
+          npm run build:linux
+          mkdir -p release-assets
+          cp -f *.deb *.AppImage release-assets/
+          cp -f scripts/campai-chat-linux.sh release-assets/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release-assets/*
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
+          name: "Campai Chat (${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('Build #{0}', github.run_number) }})"
+          body: |
+            Automatisch erstellte Desktop-Installationsdateien für **Campai Chat** (`https://app.campai.com/pt/9zbpc/rooms`).
+
+            ### Enthalten:
+            - **Windows**: `.msi` Installer (lädt WebView2 bei Bedarf automatisch nach) & `.exe`
+            - **macOS**: `.dmg` (Universal Binary: Apple Silicon + Intel)
+            - **Linux**: `.deb` (Ubuntu/Debian) & `.AppImage` (inkl. `campai-chat-linux.sh` Hilfsskript für Wayland/NVIDIA)
+          files: artifacts/*
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
